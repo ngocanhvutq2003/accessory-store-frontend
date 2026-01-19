@@ -1,16 +1,13 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useState } from 'react';
-// Đã bổ sung Space, Divider vào danh sách import từ antd
 import { Row, Col, Card, Input, Checkbox, Slider, Typography, Spin, Pagination, Upload, Button, Tooltip, Empty, Tag, Badge, Space, Divider } from 'antd';
-import { CameraOutlined, ArrowLeftOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { CameraOutlined, SearchOutlined, FilterOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Toaster, toast } from 'react-hot-toast';
 import { formatCurrency } from '../../utils/helpers';
 
 const { Title, Text } = Typography;
-// Xóa dòng const { Search } = Input; cũ để hết cảnh báo unused-vars
-
 const API_URL = process.env.REACT_APP_API_URL;
 
 const Product = () => {
@@ -19,7 +16,9 @@ const Product = () => {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [isAiLoading, setIsAiLoading] = useState(false);
-    const [aiKeyword, setAiKeyword] = useState(null);
+
+    // Đổi keyword thành object để chứa thông tin phong phú hơn từ AI
+    const [aiInfo, setAiInfo] = useState({ active: false, detected: [], keyword: '' });
 
     const [filters, setFilters] = useState({
         category: [],
@@ -63,16 +62,24 @@ const Product = () => {
             const res = await axios.post(`${API_URL}/products/search-image`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            if (res.data.success) {
-                setProducts(res.data.data);
-                setTotalProducts(res.data.data.length);
-                setAiKeyword(res.data.keyword);
-                toast.success(`AI nhận diện: "${res.data.keyword}"`);
+
+            // Backend mình vừa viết trả về: { success, data (mảng sản phẩm), total, keyword }
+            if (res.data && res.data.success) {
+                const searchRows = res.data.data || []; // data chính là result.rows từ backend
+                setProducts(searchRows);
+                setTotalProducts(res.data.total || searchRows.length);
+                setAiInfo({
+                    active: true,
+                    // Vì MobileNet trả về 1 chuỗi, mình bỏ vào mảng để map ra Tag cho đẹp
+                    detected: res.data.keyword ? [res.data.keyword] : ["Đang xác định..."],
+                    keyword: res.data.keyword || ''
+                });
+                toast.success("AI đã nhận diện xong!");
             }
         } catch (err) {
-            toast.error("Không thể nhận diện hình ảnh này");
-            setAiKeyword(null);
-            fetchProducts();
+            console.error("AI Search Error:", err);
+            toast.error(err.response?.data?.message || "AI không thể nhận diện hình ảnh này");
+            handleResetSearch();
         } finally {
             setLoading(false);
             setIsAiLoading(false);
@@ -80,8 +87,8 @@ const Product = () => {
     };
 
     const handleResetSearch = () => {
-        setAiKeyword(null);
-        setFilters({ ...filters, keyword: '', page: 1 });
+        setAiInfo({ active: false, detected: [], keyword: '' });
+        setFilters(prev => ({ ...prev, keyword: '', page: 1 }));
     };
 
     useEffect(() => {
@@ -95,8 +102,9 @@ const Product = () => {
     }, []);
 
     useEffect(() => {
-        if (!aiKeyword) fetchProducts();
-    }, [filters, aiKeyword]);
+        // Chỉ fetch tự động nếu KHÔNG phải đang hiển thị kết quả AI
+        if (!aiInfo.active) fetchProducts();
+    }, [filters, aiInfo.active]);
 
     return (
         <div style={{ background: '#fffaf9', minHeight: '100vh', padding: '40px 20px' }}>
@@ -132,20 +140,20 @@ const Product = () => {
                                             value={filters.keyword}
                                             onChange={(e) => setFilters({ ...filters, keyword: e.target.value })}
                                             onPressEnter={() => {
-                                                setAiKeyword(null);
+                                                setAiInfo({ active: false, detected: [], keyword: '' });
                                                 setFilters({ ...filters, page: 1 });
                                             }}
                                             style={{ borderRadius: 10 }}
                                         />
                                         <Upload customRequest={handleImageSearch} showUploadList={false} accept="image/*">
-                                            <Tooltip title="Tìm bằng hình ảnh (AI)">
+                                            <Tooltip title="Tìm ảnh tương đồng (AI)">
                                                 <Button
                                                     icon={<CameraOutlined />}
                                                     loading={isAiLoading}
                                                     style={{
                                                         borderRadius: 10,
-                                                        background: aiKeyword ? '#ff85a2' : '#fff',
-                                                        color: aiKeyword ? '#fff' : '#ff85a2',
+                                                        background: aiInfo.active ? '#ff85a2' : '#fff',
+                                                        color: aiInfo.active ? '#fff' : '#ff85a2',
                                                         borderColor: '#ff85a2'
                                                     }}
                                                 />
@@ -161,7 +169,7 @@ const Product = () => {
                                             options={categories}
                                             value={filters.category}
                                             onChange={(checked) => {
-                                                setAiKeyword(null);
+                                                setAiInfo({ active: false, detected: [], keyword: '' });
                                                 setFilters({ ...filters, category: checked, page: 1 });
                                             }}
                                             className="custom-checkbox-group"
@@ -179,7 +187,7 @@ const Product = () => {
                                         value={filters.price}
                                         onChange={(value) => setFilters({ ...filters, price: value })}
                                         onAfterChange={() => {
-                                            setAiKeyword(null);
+                                            setAiInfo({ active: false, detected: [], keyword: '' });
                                             setFilters(prev => ({ ...prev, page: 1 }));
                                         }}
                                     />
@@ -188,43 +196,47 @@ const Product = () => {
                                         <Tag color="pink">{formatCurrency(filters.price[1])}</Tag>
                                     </div>
                                 </div>
+
+                                {aiInfo.active && (
+                                    <Button
+                                        block
+                                        danger
+                                        icon={<CloseCircleOutlined />}
+                                        onClick={handleResetSearch}
+                                        style={{ borderRadius: 10 }}
+                                    >
+                                        Xóa kết quả AI
+                                    </Button>
+                                )}
                             </Space>
                         </Card>
                     </Col>
 
                     {/* DANH SÁCH SẢN PHẨM */}
                     <Col xs={24} lg={18}>
-                        <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                            <div>
-                                {aiKeyword ? (
-                                    <Space direction="vertical" size={0}>
-                                        <Text type="secondary">Kết quả tìm kiếm bằng AI cho:</Text>
-                                        <Title level={3} style={{ margin: 0, color: '#ff85a2' }}>
-                                            "{aiKeyword}"
-                                        </Title>
+                        <div style={{ marginBottom: 24 }}>
+                            {aiInfo.active ? (
+                                <Space direction="vertical" size={8}>
+                                    <Text type="secondary">AI đã nhận diện được các đặc điểm:</Text>
+                                    <Space wrap>
+                                        {aiInfo.detected.map((label, index) => (
+                                            <Tag color="magenta" key={index} style={{ borderRadius: 12, padding: '2px 12px' }}>
+                                                {label}
+                                            </Tag>
+                                        ))}
                                     </Space>
-                                ) : (
-                                    <Title level={3} style={{ margin: 0 }}>
-                                        {filters.keyword ? `Kết quả cho: "${filters.keyword}"` : "Khám phá phụ kiện"}
-                                    </Title>
-                                )}
-                            </div>
-
-                            {aiKeyword && (
-                                <Button
-                                    icon={<ArrowLeftOutlined />}
-                                    onClick={handleResetSearch}
-                                    type="link"
-                                    style={{ color: '#ff85a2' }}
-                                >
-                                    Xóa kết quả AI
-                                </Button>
+                                    <Title level={4} style={{ marginTop: 10 }}>Sản phẩm tương đồng nhất:</Title>
+                                </Space>
+                            ) : (
+                                <Title level={3} style={{ margin: 0 }}>
+                                    {filters.keyword ? `Kết quả cho: "${filters.keyword}"` : "Khám phá phụ kiện"}
+                                </Title>
                             )}
                         </div>
 
                         {loading ? (
                             <div style={{ textAlign: 'center', padding: '100px 0' }}>
-                                <Spin size="large" tip="Đang tìm kiếm..." />
+                                <Spin size="large" tip={isAiLoading ? "AI đang phân tích ảnh..." : "Đang tải..."} />
                             </div>
                         ) : products.length > 0 ? (
                             <>
@@ -238,12 +250,12 @@ const Product = () => {
                                             >
                                                 <Card
                                                     hoverable
-                                                    onClick={() => p.status && navigate(`/products/${p.slug}`, { state: { id: p.id } })}
+                                                    onClick={() => p.is_active && navigate(`/products/${p.slug}`, { state: { id: p.id } })}
                                                     style={{ borderRadius: 20, overflow: 'hidden', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' }}
                                                     cover={
                                                         <div style={{ height: 240, overflow: 'hidden', position: 'relative' }}>
                                                             <img src={p.image} alt={p.name} className="product-image" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                            {!p.status && (
+                                                            {!p.is_active && (
                                                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                                     <Tag color="default">HẾT HÀNG</Tag>
                                                                 </div>
@@ -252,15 +264,12 @@ const Product = () => {
                                                     }
                                                 >
                                                     <div>
-                                                        {/* SỬA TẠI ĐÂY: Kiểm tra nếu category là object thì lấy .name */}
                                                         <Text type="secondary" style={{ fontSize: 12 }}>
                                                             {p.category?.name || (typeof p.category === 'string' ? p.category : '')}
                                                         </Text>
-
                                                         <Title level={5} ellipsis={{ tooltip: p.name }} style={{ margin: '4px 0 12px', fontSize: 15 }}>
                                                             {p.name}
                                                         </Title>
-
                                                         <Space align="baseline">
                                                             <Text strong style={{ color: '#ff85a2', fontSize: 17 }}>
                                                                 {formatCurrency(p.finalPrice || p.price)}
@@ -278,7 +287,7 @@ const Product = () => {
                                     ))}
                                 </Row>
 
-                                {!aiKeyword && totalProducts > filters.pageSize && (
+                                {!aiInfo.active && totalProducts > filters.pageSize && (
                                     <div style={{ textAlign: 'center', marginTop: 50 }}>
                                         <Pagination
                                             current={filters.page}
@@ -291,7 +300,13 @@ const Product = () => {
                                 )}
                             </>
                         ) : (
-                            <Empty description="Không tìm thấy sản phẩm nào" style={{ marginTop: 80 }} />
+                            <Empty
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                description={aiInfo.active ? "AI không tìm thấy sản phẩm nào tương đồng" : "Không tìm thấy sản phẩm nào"}
+                                style={{ marginTop: 80 }}
+                            >
+                                {aiInfo.active && <Button onClick={handleResetSearch}>Quay lại danh sách</Button>}
+                            </Empty>
                         )}
                     </Col>
                 </Row>
@@ -301,6 +316,7 @@ const Product = () => {
                 __html: `
                 .custom-checkbox-group .ant-checkbox-wrapper { margin-left: 0 !important; margin-bottom: 8px; display: flex; align-items: center; }
                 .product-image:hover { transform: scale(1.08); transition: all 0.5s; }
+                .ant-btn-loading-icon { color: #ff85a2 !important; }
             `}} />
         </div>
     );
