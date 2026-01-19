@@ -194,7 +194,7 @@ const CartPage = () => {
                 ) : (
                     <Row gutter={[24, 24]}>
                         <Col xs={24} lg={16}>
-                            <Card bordered={false} style={{ borderRadius: 24 }}>
+                            <Card variant="borderless" style={{ borderRadius: 24 }}>
                                 <Table
                                     dataSource={cartItems}
                                     columns={columns}

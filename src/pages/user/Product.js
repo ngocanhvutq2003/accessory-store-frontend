@@ -63,14 +63,13 @@ const Product = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            // Backend mình vừa viết trả về: { success, data (mảng sản phẩm), total, keyword }
+
             if (res.data && res.data.success) {
-                const searchRows = res.data.data || []; // data chính là result.rows từ backend
+                const searchRows = res.data.data || [];
                 setProducts(searchRows);
                 setTotalProducts(res.data.total || searchRows.length);
                 setAiInfo({
                     active: true,
-                    // Vì MobileNet trả về 1 chuỗi, mình bỏ vào mảng để map ra Tag cho đẹp
                     detected: res.data.keyword ? [res.data.keyword] : ["Đang xác định..."],
                     keyword: res.data.keyword || ''
                 });
@@ -102,7 +101,6 @@ const Product = () => {
     }, []);
 
     useEffect(() => {
-        // Chỉ fetch tự động nếu KHÔNG phải đang hiển thị kết quả AI
         if (!aiInfo.active) fetchProducts();
     }, [filters, aiInfo.active]);
 
@@ -255,7 +253,17 @@ const Product = () => {
                                                     cover={
                                                         <div style={{ height: 240, overflow: 'hidden', position: 'relative' }}>
                                                             <img src={p.image} alt={p.name} className="product-image" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                            {!p.is_active && (
+
+                                                            {/* THÊM ĐOẠN NÀY: Hiển thị % tương đồng nếu đang ở chế độ AI Search */}
+                                                            {aiInfo.active && p.similarityScore && (
+                                                                <div style={{ position: 'absolute', top: 10, left: 10 }}>
+                                                                    <Tag color="#ff85a2" style={{ borderRadius: 10, fontWeight: 'bold', border: 'none', boxShadow: '0 2px 8px rgba(255,133,162,0.5)' }}>
+                                                                        Giống {p.similarityScore}
+                                                                    </Tag>
+                                                                </div>
+                                                            )}
+
+                                                            {p.is_active === false && (
                                                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                                     <Tag color="default">HẾT HÀNG</Tag>
                                                                 </div>

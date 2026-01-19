@@ -89,7 +89,7 @@ const Profile = () => {
         <div style={{ background: 'linear-gradient(180deg, #fff0f3 0%, #fff 100%)', minHeight: '100vh', padding: '40px 20px' }}>
             <div style={{ maxWidth: 900, margin: '0 auto' }}>
                 <Card 
-                    bordered={false} 
+                    variant="borderless" 
                     style={{ borderRadius: 30, boxShadow: '0 20px 50px rgba(255, 133, 162, 0.1)' }}
                 >
                     <Row gutter={[40, 40]}>

@@ -203,7 +203,7 @@ const Home = () => {
                         { icon: <RocketOutlined />, title: "Giao nhanh" },
                     ].map((item, index) => (
                         <Col xs={12} md={6} key={index}>
-                            <Card bordered={false} style={{ borderRadius: 20, textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
+                            <Card variant="borderless" style={{ borderRadius: 20, textAlign: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.05)' }}>
                                 <div style={{ fontSize: 32, color: '#ff85a2', marginBottom: 12 }}>{item.icon}</div>
                                 <Text strong>{item.title}</Text>
                             </Card>

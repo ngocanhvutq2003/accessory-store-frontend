@@ -147,7 +147,7 @@ const Order = () => {
                         <Row gutter={[24, 24]}>
                             {/* Cột trái: Thông tin giao hàng */}
                             <Col xs={24} lg={14}>
-                                <Card title={<Space><UserOutlined /> Thông tin nhận hàng</Space>} bordered={false} style={{ borderRadius: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                                <Card title={<Space><UserOutlined /> Thông tin nhận hàng</Space>} variant="borderless" style={{ borderRadius: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
                                     <Form.Item 
                                         name="fullname" 
                                         label="Họ và tên" 
@@ -177,7 +177,7 @@ const Order = () => {
                                     </Form.Item>
                                 </Card>
 
-                                <Card title={<Space><CreditCardOutlined /> Phương thức thanh toán</Space>} bordered={false} style={{ borderRadius: 20, marginTop: 24, boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
+                                <Card title={<Space><CreditCardOutlined /> Phương thức thanh toán</Space>} variant="borderless" style={{ borderRadius: 20, marginTop: 24, boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}>
                                     <Radio.Group 
                                         onChange={e => setPaymentMethod(e.target.value)} 
                                         value={paymentMethod}
@@ -195,7 +195,7 @@ const Order = () => {
                             <Col xs={24} lg={10}>
                                 <Card 
                                     title="Tóm tắt đơn hàng" 
-                                    bordered={false} 
+                                    variant="borderless" 
                                     style={{ borderRadius: 20, position: 'sticky', top: 20, boxShadow: '0 4px 15px rgba(0,0,0,0.03)' }}
                                 >
                                     <Table

@@ -66,7 +66,7 @@ const About = () => {
                             <Col xs={24} sm={12} md={8} key={index}>
                                 <Card
                                     hoverable
-                                    bordered={false}
+                                    variant="borderless"
                                     style={{ height: '100%', textAlign: 'center', borderRadius: 24, boxShadow: '0 10px 20px rgba(0,0,0,0.02)' }}
                                 >
                                     <div style={{ fontSize: 40, color: '#ff85a2', marginBottom: 16 }}>{item.icon}</div>

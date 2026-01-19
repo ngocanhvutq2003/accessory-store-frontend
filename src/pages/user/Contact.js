@@ -61,7 +61,7 @@ const Contact = () => {
                     {/* Form Liên Hệ */}
                     <Col xs={24} lg={14}>
                         <Card 
-                            bordered={false} 
+                            variant="borderless" 
                             style={{ 
                                 borderRadius: 32, 
                                 boxShadow: '0 20px 40px rgba(255, 133, 162, 0.05)',
@@ -157,7 +157,7 @@ const Contact = () => {
                         <Space direction="vertical" size="large" style={{ width: '100%' }}>
                             
                             {/* Card: Thông tin trực tiếp */}
-                            <Card bordered={false} style={{ borderRadius: 32, boxShadow: '0 20px 40px rgba(0,0,0,0.02)' }}>
+                            <Card variant="borderless" style={{ borderRadius: 32, boxShadow: '0 20px 40px rgba(0,0,0,0.02)' }}>
                                 <Title level={4} style={{ marginBottom: 25 }}>
                                     <CustomerServiceOutlined style={{ color: '#ff85a2', marginRight: 12 }} />
                                     Thông tin kết nối
